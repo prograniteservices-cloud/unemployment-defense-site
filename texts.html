@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Message Evidence - Barry Beaubien Defense</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Page-specific styles ── */
+        .evidence-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #2c3e50;
+            border-radius: 6px;
+            background: white;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.25s, color 0.25s, box-shadow 0.25s;
+        }
+
+        .filter-btn:hover {
+            background: #ecf0f1;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.15);
+        }
+
+        .filter-btn.active {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* ── Counter bar ── */
+        .evidence-counter {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .evidence-counter .nav-arrows {
+            display: flex;
+            gap: 8px;
+        }
+
+        .evidence-counter .nav-arrows button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .evidence-counter .nav-arrows button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ── Card list ── */
+        .card-viewport {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .text-card {
+            background: white;
+            border: 1px solid #dce1e6;
+            border-left: 5px solid #3498db;
+            border-radius: 8px;
+            padding: 24px 28px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.35s;
+            cursor: pointer;
+            opacity: 1;
+        }
+
+        .text-card.hidden {
+            display: none;
+        }
+
+        .text-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-card.expanded {
+            border-left-color: #e74c3c;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .card-date {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .card-recipient {
+            display: inline-block;
+            background: #eef7fd;
+            color: #2c3e50;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .card-category {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cat-machine {
+            background: #fdf2e9;
+            color: #e67e22;
+        }
+
+        .cat-management {
+            background: #fdedec;
+            color: #c0392b;
+        }
+
+        .cat-resources {
+            background: #eaf2f8;
+            color: #2980b9;
+        }
+
+        .card-text {
+            margin: 14px 0;
+            padding: 14px 18px;
+            background: #f0f4f8;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.55;
+            color: #2c3e50;
+            border: 1px solid #dce4ec;
+        }
+
+        .card-text::before {
+            content: '\201C';
+            font-size: 1.6em;
+            color: #95a5a6;
+            margin-right: 4px;
+            line-height: 0;
+            vertical-align: -0.15em;
+        }
+
+        .card-text::after {
+            content: '\201D';
+            font-size: 1.6em;
+            color: #95a5a6;
+            margin-left: 2px;
+            line-height: 0;
+            vertical-align: -0.15em;
+        }
+
+        .card-relevance {
+            display: none;
+            margin-top: 12px;
+            padding: 14px 18px;
+            background: #eef7fd;
+            border-left: 4px solid #3498db;
+            font-style: italic;
+            font-size: 0.93em;
+            line-height: 1.6;
+            color: #34495e;
+            border-radius: 0 6px 6px 0;
+            animation: slideDown 0.3s ease;
+        }
+
+        .text-card.expanded .card-relevance {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .expand-hint {
+            font-size: 0.8em;
+            color: #95a5a6;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .text-card.expanded .expand-hint {
+            display: none;
+        }
+
+        /* ── Spotlight / Modal view ── */
+        .spotlight-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .spotlight-overlay.visible {
+            display: flex;
+        }
+
+        .spotlight-card {
+            background: white;
+            max-width: 700px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            animation: spotlightIn 0.3s ease;
+        }
+
+        @keyframes spotlightIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .spotlight-header {
+            background: #2c3e50;
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .spotlight-header h3 {
+            margin: 0;
+            font-size: 1.1em;
+            border: none;
+            padding: 0;
+            color: white;
+        }
+
+        .spotlight-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .spotlight-body {
+            padding: 28px;
+        }
+
+        .spotlight-body .card-text {
+            font-size: 1.05em;
+            margin: 0 0 18px 0;
+        }
+
+        .spotlight-body .card-relevance {
+            display: block;
+            margin-top: 0;
+        }
+
+        .spotlight-nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 24px 20px;
+        }
+
+        .spotlight-nav button {
+            padding: 8px 20px;
+            border: 2px solid #2c3e50;
+            border-radius: 6px;
+            background: white;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .spotlight-nav button:hover {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* ── Summary section ── */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .stat-box {
+            background: white;
+            border: 1px solid #dce1e6;
+            border-radius: 8px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .stat-box .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-box .stat-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .evidence-controls {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            .filter-btn {
+                flex-shrink: 0;
+            }
+
+            .spotlight-card {
+                margin: 12px;
+            }
+        }
+
+        /* ── Print-friendly ── */
+        @media print {
+
+            .evidence-controls,
+            .evidence-counter,
+            .expand-hint,
+            .spotlight-overlay {
+                display: none !important;
+            }
+
+            .card-relevance {
+                display: block !important;
+            }
+
+            .text-card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #999;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Barry Beaubien vs. Stonequarters, LLC</h1>
+        <p>Unemployment Appeal Defense - Master Packet</p>
+    </header>
+
+    <nav>
+        <a href="index.html">Opening Statement</a>
+        <a href="timeline.html">Full Timeline</a>
+        <a href="full_defense.html">Evidence & Exhibits</a>
+        <a href="texts.html" class="active">Text Messages</a>
+        <a href="closing.html">Closing Argument</a>
+    </nav>
+
+    <div class="container">
+        <h2>Text Message Evidence</h2>
+        <p>The following are documented text messages between Barry Beaubien, Shop Manager Andrew Bazil, owner Doug,
+            and supervisor Robbie. Each message is categorized by the type of issue it documents. <strong>Click any
+                card</strong> to view its legal relevance, or use the <strong>Present</strong> button for a
+            full-screen view suitable for hearing presentation.</p>
+
+        <!-- Summary Stats -->
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total Text Messages</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number stat-machine" id="machineCount">0</div>
+                <div class="stat-label">Machine Failures</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number stat-mgmt" id="mgmtCount">0</div>
+                <div class="stat-label">Management Negligence</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number stat-resources" id="resourceCount">0</div>
+                <div class="stat-label">Lack of Tools/Time</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="evidence-controls">
+            <button class="filter-btn active" data-filter="all">All Messages</button>
+            <button class="filter-btn" data-filter="machine">Machine Failures</button>
+            <button class="filter-btn" data-filter="management">Management Negligence</button>
+            <button class="filter-btn" data-filter="resources">Lack of Tools & Time</button>
+            <button class="filter-btn" data-filter="andrew">To Andrew</button>
+            <button class="filter-btn" data-filter="doug">To Doug</button>
+            <button class="filter-btn" data-filter="robbie">To Robbie</button>
+        </div>
+
+        <!-- Counter + Navigation -->
+        <div class="evidence-counter">
+            <span id="displayCount">Showing 0 of 0 messages</span>
+            <div class="nav-arrows">
+                <button onclick="presentMode()" title="Full-screen presentation mode">&#9654; Present</button>
+            </div>
+        </div>
+
+        <!-- Card List -->
+        <div class="card-viewport" id="cardViewport">
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- CATEGORY: Machine Failures              -->
+            <!-- ═══════════════════════════════════════ -->
+
+            <div class="text-card" data-category="machine" data-recipient="doug" data-index="0">
+                <div class="card-header">
+                    <span class="card-date">Nov 27, 2024</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">3cm big eased is full of lines and very bad polish</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Shows the machinery was consistently producing poor results (lines
+                    and bad polish) regardless of operator skill. The equipment—not Barry—was responsible for "bad
+                    work."
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="doug" data-index="1">
+                <div class="card-header">
+                    <span class="card-date">Jan 28, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">We blew the drain out w the PVC air hose contraption. It's flowing again</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Demonstrates that Barry had to use makeshift "contraptions" to fix
+                    basic machine drainage issues just to keep production moving. Barry was problem-solving, not
+                    performing "bad work."
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="doug" data-index="2">
+                <div class="card-header">
+                    <span class="card-date">Jun 12, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">Kitchen pieces are coming off missing edges still... and 2cm square vanities have
+                    a big lip on the top of the profile.</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Direct evidence that the CNC/Routers were malfunctioning and
+                    creating "bad work" that Barry was then forced to repair by hand. The source of the defects was
+                    upstream, not at Barry's station.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="doug" data-index="3">
+                <div class="card-header">
+                    <span class="card-date">Jun 20, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">The bottoms aren't very smooth and the corners are either wrong or not done at
+                    all</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Documents systemic machine failure where the equipment was not
+                    completing basic tasks (corners and smoothing), leading to "unfinished" appearances that Barry was
+                    blamed for.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="robbie" data-index="4">
+                <div class="card-header">
+                    <span class="card-date">Jun 24, 2025</span>
+                    <span class="card-recipient">To: Robbie</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">Air dryer is down. Giving a temperature error... Can't get any pressure on the
+                    suction cup clamp</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Critical equipment failure (air dryer and clamps) physically
+                    prevented Barry from finishing work on time. This is "inability" due to equipment, not misconduct.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="doug" data-index="5">
+                <div class="card-header">
+                    <span class="card-date">Jul 14–16, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">3cm big eased is starting to leave deep lines ... Getting a raw groove towards
+                    the bottom... about a qtr inch from the bottom</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Barry identified and reported specific mechanical wear (grooving
+                    and deep lines) that was ruining the product. He was proactively communicating issues, not ignoring
+                    them.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="andrew" data-index="6">
+                <div class="card-header">
+                    <span class="card-date">Aug 1, 2025</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">Surface scratches on 230bf island</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Documents that items were emerging from the process with surface
+                    damage, which corroborates Barry's claim that the machinery was responsible for the "bad work" cited
+                    by the employer.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="andrew" data-index="7">
+                <div class="card-header">
+                    <span class="card-date">Aug 7, 2025</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">The island kicked out. Only half the side is polished now</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Evidence of a sudden mechanical malfunction ("kicked out") that
+                    caused an error in a major piece. This provides direct proof that a "quality" issue was caused by
+                    machine failure, not Barry's lack of effort.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="machine" data-recipient="andrew" data-index="8">
+                <div class="card-header">
+                    <span class="card-date">Aug 27, 2025</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-machine">Machine Failure</span>
+                </div>
+                <div class="card-text">Up to 5 islands needing trim and polish</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Shows that the machinery was failing to produce finished results,
+                    creating a backlog of "unfinished" work that was used as grounds for claiming Barry was
+                    unproductive.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- CATEGORY: Management Negligence          -->
+            <!-- ═══════════════════════════════════════ -->
+
+            <div class="text-card" data-category="management" data-recipient="doug" data-index="9">
+                <div class="card-header">
+                    <span class="card-date">May 14, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">And Doug forgot to give Jojo 4 programs for tomorrow and instead had him running
+                    Friday so Jojo has 4 more programs to do still</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Establishes a long-term pattern where Doug's own negligence
+                    (forgetting programs) directly caused delays and late work for the staff—not Barry's performance.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="doug" data-index="10">
+                <div class="card-header">
+                    <span class="card-date">Oct 13, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">I'm in a bad way boss... zero savings and $99 in my checking. Idk what to do.
+                </div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Barry explicitly informed the owner of a severe personal/financial
+                    crisis that was affecting his ability to get to work (broken car), yet no meaningful accommodation
+                    was offered. This shows a lack of support from management.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="doug" data-index="11">
+                <div class="card-header">
+                    <span class="card-date">Oct 15, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">I told Robbie I'm not hand polishing all the angle pieces bc I'm already
+                    polishing the bottoms... plus all the vanity repairs. He said if I'm not going to work to clock out
+                    and go home.</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Shows Robbie ignored reasonable concerns about an impossible
+                    workload and responded with a threat of termination ("go home") rather than professional support.
+                    This is management creating a hostile environment, not employee misconduct.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="robbie" data-index="12">
+                <div class="card-header">
+                    <span class="card-date">Nov 24 – Dec 1, 2025</span>
+                    <span class="card-recipient">To: Robbie</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Can she resend my last check as well... Is your info correct now so when she does
+                    payroll, it will go into your account?</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Management negligence regarding administrative duties; they
+                    repeatedly failed to fix Barry's name on paychecks, causing him to lose access to his funds during a
+                    financial crisis.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="andrew" data-index="13">
+                <div class="card-header">
+                    <span class="card-date">Jan 14, 2026</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Hey bro, remember the day I left and stuff wasn't finished yet and I told Robbie,
+                    and then he wrote me up the next day?</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Vital evidence for the appeal. Proves Barry acted in good faith by
+                    notifying Robbie that work was unfinished due to circumstances, yet Robbie penalized him regardless.
+                    This is retaliatory.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="andrew" data-index="14">
+                <div class="card-header">
+                    <span class="card-date">Jan 14, 2026</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Doug only comes in to fix machine now.</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Confirms a lack of daily operational leadership and support from
+                    management, leaving Barry without the necessary guidance and oversight ("tools") to succeed.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="andrew" data-index="15">
+                <div class="card-header">
+                    <span class="card-date">Jan 14, 2026</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Tell me why he was yelling in his report to unemployment? Lmao (Barry's work is
+                    bad!!!!)</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Demonstrates Robbie's unprofessional and personal bias in the
+                    unemployment report, using hyperbolic language ("yelling") instead of objective performance data.
+                    This undermines the employer's credibility.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="andrew" data-index="16">
+                <div class="card-header">
+                    <span class="card-date">Jan 31, 2026</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Robbie was vague in his response and said my work was bad..not that it wasn't
+                    finished</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Proves management intentionally mischaracterized "unfinished work"
+                    (caused by machine/time issues) as "bad work" to the unemployment office. This is a deliberate
+                    misrepresentation to justify the termination.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="management" data-recipient="andrew" data-index="17">
+                <div class="card-header">
+                    <span class="card-date">Feb 11, 2026</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-management">Management Negligence</span>
+                </div>
+                <div class="card-text">Nothing is leaving shop done right lol... Nobody knows shit. Blaming each other
+                    lol</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Corroboration from a current employee (Andrew) that the "bad work"
+                    continued after Barry left, proving the issues were shop-wide and systemic—not specific to Barry's
+                    performance.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- CATEGORY: Lack of Tools / Time           -->
+            <!-- ═══════════════════════════════════════ -->
+
+            <div class="text-card" data-category="resources" data-recipient="doug" data-index="18">
+                <div class="card-header">
+                    <span class="card-date">Jun 11, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">I'm missing paperwork for SPCA and Reed branham Sloane Neal and the internet is
+                    down so David can't print</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Administrative failure (internet down, no paperwork) prevented
+                    Barry from being able to complete specific assigned jobs. This is inability due to employer systems,
+                    not misconduct.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="resources" data-recipient="doug" data-index="19">
+                <div class="card-header">
+                    <span class="card-date">Jun 17–18, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">Was missing backsplash for a job... stole it from a job for tomorrow and told
+                    David to cut me some more</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Illustrates a lack of basic materials, forcing Barry to "steal"
+                    parts from other jobs just to finish the current one. He was resourcefully problem-solving despite
+                    systemic supply failures.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="resources" data-recipient="doug" data-index="20">
+                <div class="card-header">
+                    <span class="card-date">Jun 20, 2025</span>
+                    <span class="card-recipient">To: Doug</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">I don't have black. Do you have any. Both boxes in here are missing black</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Documents that Barry was not provided with necessary supplies
+                    (black tint) to perform professional repairs. You can't complete quality work without the materials
+                    to do so.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="resources" data-recipient="robbie" data-index="21">
+                <div class="card-header">
+                    <span class="card-date">Aug 6, 2025</span>
+                    <span class="card-recipient">To: Robbie</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">I told everyone I didn't have time to double check it... we need adequate time to
+                    do quality control</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Barry specifically warned management that the lack of time and
+                    last-minute schedule changes would result in errors, yet they proceeded anyway. He acted in good
+                    faith; management accepted the risk.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="resources" data-recipient="andrew" data-index="22">
+                <div class="card-header">
+                    <span class="card-date">Aug 13, 2025</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">Missing 3 vanities for 73 and 74</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> Another documented example of missing materials preventing the
+                    completion of tasks, refuting the claim that delays were Barry's fault.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+            <div class="text-card" data-category="resources" data-recipient="andrew" data-index="23">
+                <div class="card-header">
+                    <span class="card-date">Nov 10, 2025</span>
+                    <span class="card-recipient">To: Andrew</span>
+                    <span class="card-category cat-resources">Lack of Tools & Time</span>
+                </div>
+                <div class="card-text">Missing 6 side splash for 28 og</div>
+                <div class="card-relevance">
+                    <strong>Legal Relevance:</strong> A clear instance where Barry was not provided the physical
+                    materials required to complete a job, making it impossible to finish on time.
+                </div>
+                <div class="expand-hint">&#9660; Click to view legal relevance</div>
+            </div>
+
+        </div>
+        <!-- end card-viewport -->
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="full_defense.html"
+                style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">&#8592;
+                Back to Evidence & Exhibits</a>
+            <a href="closing.html"
+                style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-left: 10px;">Next:
+                Closing Argument &rarr;</a>
+        </div>
+    </div>
+
+    <!-- ── Spotlight overlay ── -->
+    <div class="spotlight-overlay" id="spotlightOverlay">
+        <div class="spotlight-card">
+            <div class="spotlight-header">
+                <h3 id="spotlightTitle">Text Evidence</h3>
+                <button class="spotlight-close" onclick="closeSpotlight()">&times;</button>
+            </div>
+            <div class="spotlight-body">
+                <div class="card-text" id="spotlightText"></div>
+                <div class="card-relevance" id="spotlightRelevance" style="display:block;"></div>
+            </div>
+            <div class="spotlight-nav">
+                <button onclick="spotlightPrev()">&#8592; Previous</button>
+                <span id="spotlightCounter" style="align-self: center; font-weight: 600; color: #7f8c8d;"></span>
+                <button onclick="spotlightNext()">Next &#8594;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Data refs ──
+        const cards = Array.from(document.querySelectorAll('.text-card'));
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const displayCount = document.getElementById('displayCount');
+        let visibleCards = [...cards];
+        let spotlightIndex = 0;
+
+        // ── Stats ──
+        document.getElementById('totalCount').textContent = cards.length;
+        document.getElementById('machineCount').textContent =
+            cards.filter(c => c.dataset.category === 'machine').length;
+        document.getElementById('mgmtCount').textContent =
+            cards.filter(c => c.dataset.category === 'management').length;
+        document.getElementById('resourceCount').textContent =
+            cards.filter(c => c.dataset.category === 'resources').length;
+
+        // ── Filtering ──
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.dataset.filter;
+
+                cards.forEach(card => {
+                    const matchCategory = filter === 'all' || card.dataset.category === filter;
+                    const matchRecipient = filter === 'all' || card.dataset.recipient === filter;
+                    const show = filter === 'all' || matchCategory || matchRecipient;
+                    card.classList.toggle('hidden', !show);
+                });
+
+                visibleCards = cards.filter(c => !c.classList.contains('hidden'));
+                displayCount.textContent = `Showing ${visibleCards.length} of ${cards.length} messages`;
+            });
+        });
+
+        // Init count
+        displayCount.textContent = `Showing ${cards.length} of ${cards.length} messages`;
+
+        // ── Expand / collapse ──
+        cards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.spotlight-overlay')) return;
+                card.classList.toggle('expanded');
+            });
+        });
+
+        // ── Spotlight (presentation mode) ──
+        function presentMode() {
+            visibleCards = cards.filter(c => !c.classList.contains('hidden'));
+            if (visibleCards.length === 0) return;
+            spotlightIndex = 0;
+            renderSpotlight();
+            document.getElementById('spotlightOverlay').classList.add('visible');
+        }
+
+        function closeSpotlight() {
+            document.getElementById('spotlightOverlay').classList.remove('visible');
+        }
+
+        function renderSpotlight() {
+            const card = visibleCards[spotlightIndex];
+            const date = card.querySelector('.card-date').textContent;
+            const recipient = card.querySelector('.card-recipient').textContent;
+            const category = card.querySelector('.card-category').textContent;
+            const text = card.querySelector('.card-text').textContent;
+            const relevance = card.querySelector('.card-relevance').innerHTML;
+
+            document.getElementById('spotlightTitle').textContent =
+                `${date}  •  ${recipient}  •  ${category}`;
+            document.getElementById('spotlightText').textContent = text;
+            document.getElementById('spotlightRelevance').innerHTML = relevance;
+            document.getElementById('spotlightCounter').textContent =
+                `${spotlightIndex + 1} / ${visibleCards.length}`;
+        }
+
+        function spotlightNext() {
+            spotlightIndex = (spotlightIndex + 1) % visibleCards.length;
+            renderSpotlight();
+        }
+
+        function spotlightPrev() {
+            spotlightIndex = (spotlightIndex - 1 + visibleCards.length) % visibleCards.length;
+            renderSpotlight();
+        }
+
+        // ── Keyboard navigation in spotlight ──
+        document.addEventListener('keydown', (e) => {
+            const overlay = document.getElementById('spotlightOverlay');
+            if (!overlay.classList.contains('visible')) return;
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); spotlightNext(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); spotlightPrev(); }
+            if (e.key === 'Escape') closeSpotlight();
+        });
+
+        // Close spotlight on overlay click
+        document.getElementById('spotlightOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeSpotlight();
+        });
+    </script>
+</body>
+
+</html>
